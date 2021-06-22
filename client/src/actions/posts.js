@@ -35,7 +35,11 @@ export const createPost = (post) => async (dispatch) => {
 
 		const resp = await api.createPost(post);
 		const { data } = resp || {};
-
+		
+		// dispatch({
+		// 	type: 'CREATE_POST',
+		// 	payload: data
+		// });
 		dispatch({
 			type: TOGGLE_LOADING,
 			payload: false

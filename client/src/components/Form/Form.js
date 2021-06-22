@@ -1,3 +1,5 @@
+/* eslint-disable no-fallthrough */
+/* eslint-disable default-case */
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import FileBase from 'react-file-base64';
@@ -23,12 +25,19 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		selectedFile: '',
 		selectedBackgroundFile: '',
 	});
+	const [errors, setErrors] = useState({
+		author: '',
+		title: '',
+		tags: '',
+		message: '',
+		isError: '',
+	});
 
   const [open, setOpen] = useState(false);
-	const [errors, setErrors] = useState({});
 	const [success, setSuccess] = useState(false);
 	
-	const post = useSelector((state) => currentId ? state.posts.list?.find((post) => post._id === currentId) : null);
+	const post = useSelector((state) => currentId ? (state.posts.list?.find((post) => post._id === currentId) || {}) : null)
+
 	const formTitle = currentId ? 'Editing a Post' : 'Creating a Post';
 	const snackbarMessage = success ? 'Message Posted!' : 'Form Is Not Valid';
 
@@ -36,12 +45,37 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 	const dispatch = useDispatch();
 	
 	useEffect(() => {
-		if(post) {
-			setPostData(post);
+		if (currentId) {
+			setPostData((prevState) => ({
+				...prevState,
+				author: post.author,
+				title: post.title,
+				tags: post.tags,
+				message: post.message
+			}));
 		}
-	}, [post])
+	}, [currentId])
 
+	useEffect(() => {
+		if(currentId) {
+			validateData();
+		}
+	}, [postData, currentId])
 
+	useEffect(() => {
+		setErrors((prevErr) => ({
+			...prevErr,
+			author: null,
+			title: null,
+			tags: null,
+			message: null,
+			isError: '',
+		}))
+}, [])
+
+	function validateData() {
+		Object.keys(postData).forEach((item) => handleValidation('', item));
+	}
   const handleClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
@@ -52,67 +86,78 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 
 	const handleValidation = (e, value) => {
 		const switchValue = value || e?.target?.name;
+
+		const isAuthorValid = AUTHOR_AND_TITLE_REGEXP.test(postData.author);
+		const isTitleValid = AUTHOR_AND_TITLE_REGEXP.test(postData.title);
+		const isTagsValid = TAGS_REGEXP.test(postData.tags);
+		const isMessageValid = MESSAGE_REGEXP.test(postData.message);
+
 		switch(switchValue) {
-			case 'author': {
-				const isAuthorValid = AUTHOR_AND_TITLE_REGEXP.test(postData.author);
-				const errorText = isAuthorValid ? '' : AUTHOR_AND_TITLE_ERROR_TEXT;
+			case('author'): {
+				const errorText = isAuthorValid ? null : AUTHOR_AND_TITLE_ERROR_TEXT;
+					setErrors((prevErr) => ({
+						...prevErr,
+						author: errorText
+					}));
 
-				setErrors({
-					...errors,
-					author: errorText
-				});
-				return isAuthorValid;
+					if (e?.target?.name) {
+						break;
+					}
 			}
-			case 'title': {
-				const isTitleValid = AUTHOR_AND_TITLE_REGEXP.test(postData.title);
-				const errorText = isTitleValid ? '' : AUTHOR_AND_TITLE_ERROR_TEXT;
-				
-				setErrors({
-					...errors,
-					title: errorText,
-				});
+			case('title'): {
+				const errorText = isTitleValid ? null : AUTHOR_AND_TITLE_ERROR_TEXT;
 
-				return isTitleValid;
+				setErrors((prevErr) => ({
+					...prevErr,
+					title: errorText
+				}));
+
+				if (e?.target?.name) {
+					break;
+				}
+			} 
+			case('tags'): {
+				const errorText = isTagsValid ? null : TAGS_ERROR_TEXT;
+
+				setErrors((prevErr) => ({
+					...prevErr,
+					tags: errorText
+				}));
+
+				if (e?.target?.name) {
+					break;
+				}
 			}
+			case('message'): {
+				const errorText = isMessageValid ? null : MESSAGE_ERROR_TEXT;
 
-			case 'tags': {
-				const isTagsValid = TAGS_REGEXP.test(postData.tags);
-				const errorText = isTagsValid ? '' : TAGS_ERROR_TEXT;
+				setErrors((prevErr) => ({
+					...prevErr,
+					message: errorText,
+				}));
 
-				setErrors({ 
-					...errors, 
-					tags: errorText,
-				});
-
-				return isTagsValid;
+				if (e?.target?.name) {
+					break;
+				}
 			}
 			
-			case 'message': {
-				const isMessageValid = MESSAGE_REGEXP.test(postData.message);
-				const errorText = isMessageValid ? '' : MESSAGE_ERROR_TEXT;
-
-				setErrors({
-					...errors,
-					message: errorText,
-				});
-
-				return isMessageValid;
-			}
-
-			default: {
-				return true;
-			}
+		}
+		if(isAuthorValid && isTitleValid && isTagsValid && isMessageValid) {
+			setErrors((prevErr) => ({ ...prevErr, isError: null }));
 		}
 	}
 
 	const handleSubmitPost = async (event) => {
 		event.preventDefault();
-		const isValid = Object.keys(postData).every((item) => handleValidation('', item));
 
-		if(isValid) {
+		validateData();
+
+		const isFormValid = Object.keys(errors).every((item) => errors[item] === null);
+
+		if(isFormValid) {
 			const callFunc = currentId ? (updatePost(currentId, postData)) : (createPost(postData));
 			const resp = await callFunc(dispatch);
-			setSuccess(resp.success);
+			setSuccess(resp?.success);
 			await dispatch(getPosts());
 			clearOnSubmit();
 			setOpen(true);
@@ -126,35 +171,59 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 	const clearForm = () => {
 		setCurrentId(null);
 		setPostData({
-			title: '',
+			...postData,
 			author: '',
-			message: '',
+			title: '',
 			tags: '',
+			message: '',
 			selectedFile: '',
 			selectedBackgroundFile: '',
 		});
+		setErrors((prevErr) => ({
+			...prevErr,
+			author: null,
+			title: null,
+			tags: null,
+			message: null,
+			isError: '',
+		}))
 	} 
 	const clearOnSubmit = () => {
 		setCurrentId(null);
 		setPostData({
-			title: '',
+			...postData,
 			author: `${postData.author}`,
-			message: '',
+			title: '',
 			tags: '',
+			message: '',
 			selectedFile: '',
 			selectedBackgroundFile: '',
 		});
+		setErrors((prevErr) => ({
+			...prevErr,
+			author: null,
+			title: null,
+			tags: null,
+			message: null,
+			isError: '',
+		}))
 	}
 
 	return (
 		<Paper className={classes.paper}>
-			<form ref={formRef} autoComplete='off' className={`${classes.root} ${classes.form}`} onSubmit={handleSubmitPost}>
+			<form
+				ref={formRef}
+				autoComplete='off'
+				className={`${classes.root} ${classes.form}`}
+				onReset={clearForm}
+				onSubmit={handleSubmitPost}
+			>
 				<Typography variant='h6'>{formTitle}</Typography>
 				<TextField 
 					name='author'
 					placeholder={'firstName or firstName lastName'}
-					error={errors.author}
-					helperText={errors.author || null}
+					error={errors?.author}
+					helperText={errors?.author || null}
 					variant='outlined'
 					label='Author' 
 					fullWidth
@@ -164,8 +233,8 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 				/>
 				<TextField 
 					name='title'
-					error={errors.title}
-					helperText={errors.title || null} 
+					error={errors?.title}
+					helperText={errors?.title || null} 
 					variant='outlined'
 					label='Title' 
 					fullWidth
@@ -175,8 +244,8 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 				/>
 				<TextField 
 					name='tags'
-					error={errors.tags}
-					helperText={errors.tags || null}  
+					error={errors?.tags}
+					helperText={errors?.tags || null}  
 					variant='outlined'
 					label='Tags (coma separated)'
 					placeholder='tag1,tag2,tag3'
@@ -185,16 +254,19 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 					onBlur={handleValidation}
 					onChange={(event) => setPostData({ ...postData, tags: event.target.value.split(',') }) }
 				/>
-				<TextareaAutosize
-					required
-					title='No white spaces at start of message'
-					minLength='2'
-					maxLength='500'
-					// error={errors.message}
-					// helperText={errors.message ||	 null} 
-					className={classes.textarea}
+				<TextField
+					name='message'
+				  rows={7}
+					rowsMax={7}
+					multiline
+					fullWidth
+					variant='outlined'
+					label='Message'
 					placeholder="Message" 
+					error={errors?.message}
+					helperText={errors?.message ||	 null} 
 					value={postData.message}
+					onBlur={handleValidation}
 					onChange={(event) => setPostData({ ...postData, message: event.target.value })}
 				/>
 				<Tooltip title='Select avatar' aria-label='Select avatar' placement='left'>
@@ -225,8 +297,8 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 				>
 					Submit
 				</Button>
-				<Button 
-					onClick={clearForm}
+				<Button
+					type='reset' 
 					variant='contained' 
 					color='secondary' 
 					size='large' 

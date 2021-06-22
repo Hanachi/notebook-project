@@ -11,4 +11,7 @@ export default makeStyles((theme) => ({
   actionDiv: {
     textAlign: 'center',
   },
+  loader: {
+		minHeight: '600px',
+	},
 }));

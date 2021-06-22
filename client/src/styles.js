@@ -17,6 +17,7 @@ export default makeStyles((theme) => ({
 		marginLeft: '15px',
 	},
 	loader: {
+		height: '50px',
 		display: 'flex',
 		justifyContent: 'center',
 		alignItems: 'center',
@@ -25,5 +26,10 @@ export default makeStyles((theme) => ({
 		mainContainer: {
 			flexDirection:'column-reverse',
 		}
-	}
+	},
+	[theme.breakpoints.down('md')]: {
+		mainContainer: {
+			flexDirection:'column-reverse',
+		}
+	},
 }));

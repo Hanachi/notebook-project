@@ -14,6 +14,13 @@ export const postsReducer = (posts = initialState, action) => {
 			}
 		}
 
+		// case 'CREATE_POST': {
+		// 	return {
+		// 		...posts,
+		// 		posts: action.payload,
+		// 	}
+		// }
+
 		case TOGGLE_LOADING: {
 			return {
 				...posts,

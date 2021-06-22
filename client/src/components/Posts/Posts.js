@@ -13,15 +13,15 @@ const Posts = ({ setCurrentId, formRef }) => {
 	const classes = useStyles();
 
 	return (
-		loading ? <CircularProgress className={classes.loader} /> : (
-			<Grid className={classes.container} container alignItems='stretch' spacing={3}>
-				{posts.map((post) => (
-					<Grid key={post._id} item xs={12} sm={6}>
-						<Post formRef={formRef} post={post} setCurrentId={setCurrentId} />
-					</Grid>
-				))}
+		
+			<Grid className={classes.loader} container alignItems={loading ? 'center' : 'stretch'} justify={loading ? 'center' : 'stretch'} spacing={3}>
+				{loading ? <CircularProgress /> : 
+					posts.map((post) => (
+						<Grid key={post._id} item xs={12} sm={6}>
+							<Post formRef={formRef} post={post} setCurrentId={setCurrentId} />
+						</Grid>
+					))}
 			</Grid>
-		)
 	);
 }
 
