@@ -18,7 +18,6 @@ import { createPost, getPosts, updatePost } from '../../actions/posts';
 
 const Form = ({ currentId, setCurrentId, formRef }) => {
 	const [postData, setPostData] = useState({
-		author: '',
 		title: '',
 		message: '',
 		tags: '',
@@ -26,7 +25,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		selectedBackgroundFile: '',
 	});
 	const [errors, setErrors] = useState({
-		author: '',
 		title: '',
 		tags: '',
 		message: '',
@@ -40,6 +38,7 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 
 	const formTitle = currentId ? 'Editing a Post' : 'Creating a Post';
 	const snackbarMessage = success ? 'Message Posted!' : 'Form Is Not Valid';
+	const user = JSON.parse(localStorage.getItem('profile'));
 
 	const classes = useStyles();
 	const dispatch = useDispatch();
@@ -48,7 +47,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		if (currentId) {
 			setPostData((prevState) => ({
 				...prevState,
-				author: post.author,
 				title: post.title,
 				tags: post.tags,
 				message: post.message
@@ -65,7 +63,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 	useEffect(() => {
 		setErrors((prevErr) => ({
 			...prevErr,
-			author: null,
 			title: null,
 			tags: null,
 			message: null,
@@ -87,23 +84,23 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 	const handleValidation = (e, value) => {
 		const switchValue = value || e?.target?.name;
 
-		const isAuthorValid = AUTHOR_AND_TITLE_REGEXP.test(postData.author);
+		// const isAuthorValid = AUTHOR_AND_TITLE_REGEXP.test(postData.author);
 		const isTitleValid = AUTHOR_AND_TITLE_REGEXP.test(postData.title);
 		const isTagsValid = TAGS_REGEXP.test(postData.tags);
 		const isMessageValid = MESSAGE_REGEXP.test(postData.message);
 
 		switch(switchValue) {
-			case('author'): {
-				const errorText = isAuthorValid ? null : AUTHOR_AND_TITLE_ERROR_TEXT;
-					setErrors((prevErr) => ({
-						...prevErr,
-						author: errorText
-					}));
+			// case('author'): {
+			// 	const errorText = isAuthorValid ? null : AUTHOR_AND_TITLE_ERROR_TEXT;
+			// 		setErrors((prevErr) => ({
+			// 			...prevErr,
+			// 			author: errorText
+			// 		}));
 
-					if (e?.target?.name) {
-						break;
-					}
-			}
+			// 		if (e?.target?.name) {
+			// 			break;
+			// 		}
+			// }
 			case('title'): {
 				const errorText = isTitleValid ? null : AUTHOR_AND_TITLE_ERROR_TEXT;
 
@@ -142,7 +139,7 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 			}
 			
 		}
-		if(isAuthorValid && isTitleValid && isTagsValid && isMessageValid) {
+		if(isTitleValid && isTagsValid && isMessageValid) {
 			setErrors((prevErr) => ({ ...prevErr, isError: null }));
 		}
 	}
@@ -155,7 +152,7 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		const isFormValid = Object.keys(errors).every((item) => errors[item] === null);
 
 		if(isFormValid) {
-			const callFunc = currentId ? (updatePost(currentId, postData)) : (createPost(postData));
+			const callFunc = currentId ? (updatePost(currentId, { ...postData, name: user?.result?.name })) : (createPost({ ...postData, name: user?.result?.name }));
 			const resp = await callFunc(dispatch);
 			setSuccess(resp?.success);
 			await dispatch(getPosts());
@@ -172,7 +169,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		setCurrentId(null);
 		setPostData({
 			...postData,
-			author: '',
 			title: '',
 			tags: '',
 			message: '',
@@ -181,7 +177,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		});
 		setErrors((prevErr) => ({
 			...prevErr,
-			author: null,
 			title: null,
 			tags: null,
 			message: null,
@@ -192,7 +187,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		setCurrentId(null);
 		setPostData({
 			...postData,
-			author: `${postData.author}`,
 			title: '',
 			tags: '',
 			message: '',
@@ -201,12 +195,21 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 		});
 		setErrors((prevErr) => ({
 			...prevErr,
-			author: null,
 			title: null,
 			tags: null,
 			message: null,
 			isError: '',
 		}))
+	}
+
+	if(!user?.result?.name) {
+		return (
+			<Paper className={classes.paper}>
+				<Typography variant='h6' align='center'>
+					Please Sign In to create a post!
+				</Typography>
+			</Paper>
+		)
 	}
 
 	return (
@@ -219,18 +222,6 @@ const Form = ({ currentId, setCurrentId, formRef }) => {
 				onSubmit={handleSubmitPost}
 			>
 				<Typography variant='h6'>{formTitle}</Typography>
-				<TextField 
-					name='author'
-					placeholder={'firstName or firstName lastName'}
-					error={errors?.author}
-					helperText={errors?.author || null}
-					variant='outlined'
-					label='Author' 
-					fullWidth
-					value={postData.author}
-					onBlur={handleValidation}
-					onChange={(event) => setPostData({ ...postData, author: event.target.value })}
-				/>
 				<TextField 
 					name='title'
 					error={errors?.title}

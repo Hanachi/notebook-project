@@ -17,7 +17,8 @@ const Post = ({ post, setCurrentId, formRef }) => {
 	const dispatch = useDispatch();
 
 	const postTags = post?.tags?.map((tag) => `#${tag} `);
-	const avatarWithoutImage = post?.author?.split(/\s/).reduce((response,word)=> response+=word.slice(0,1),'');
+	const avatarWithoutImage = post?.name?.split(/\s/).reduce((response,word)=> response+=word.slice(0,1),'');
+	const user = JSON.parse(localStorage.getItem('profile'));
 
 	const executeScrollAndUpdate = (postID) => {
 		setCurrentId(postID);
@@ -28,25 +29,27 @@ const Post = ({ post, setCurrentId, formRef }) => {
 		<Card className={classes.card}>
 			<CardMedia className={classes.media} image={post.selectedBackgroundFile} title={post.title} />
 			<div className={classes.overlay}>
-				<Avatar className={classes.large} alt={post.author} src={post.selectedFile}>
+				<Avatar className={classes.large} alt={post.name} src={post.selectedFile}>
 					{avatarWithoutImage}
 				</Avatar>
 				<div className={classes.overlayInfo}>
-					<Typography variant='h6'>{post.author}</Typography>
+					<Typography variant='h6'>{post.name}</Typography>
 					<Typography variant='body2'>{moment(post.createdAt).fromNow()}</Typography>
 				</div>
 			</div>
-			<div className={classes.overlayUpdate}>
-				<Tooltip title="Update" aria-label="Update">
-					<Button 
-						onClick={() => executeScrollAndUpdate(post._id)} 
-						style={{color: 'white'}} 
-						size='small'
-					>
-						<MoreHorizIcon fontSize='default' />
-					</Button>
-				</Tooltip>
-			</div>
+			{(user?.result?.googleId === post?.author || user?.result?._id === post?.author) && (
+				<div className={classes.overlayUpdate}>
+					<Tooltip title="Update" aria-label="Update">
+						<Button 
+							onClick={() => executeScrollAndUpdate(post._id)} 
+							style={{color: 'white'}} 
+							size='small'
+						>
+							<MoreHorizIcon fontSize='default' />
+						</Button>
+					</Tooltip>
+				</div>
+			)}
 			<div className={classes.details}>
 				<Typography variant='body2' color='textSecondary'>{postTags}</Typography>
 			</div>
@@ -55,17 +58,19 @@ const Post = ({ post, setCurrentId, formRef }) => {
 				<Typography variant='body2' color='textSecondary' component='p'>{post.message}</Typography>
 			</CardContent>
 			<CardActions className={classes.cardActions}>
-				<Button 
-					onClick={async () => {
-						await dispatch(deletePost(post._id))
-						await dispatch(getPosts())
-						}} 
-					size='small' 
-					color='primary' 
-				>
+				{(user?.result?.googleId === post?.author || user?.result?._id === post?.author) && (
+					<Button 
+						onClick={async () => {
+							await dispatch(deletePost(post._id))
+							await dispatch(getPosts())
+							}} 
+						size='small' 
+						color='primary' 
+					>
 						<DeleteIcon fontSize='small' />
 						&nbsp;Delete
-				</Button>
+					</Button>
+				)}
 			</CardActions>
 		</Card>
 	);

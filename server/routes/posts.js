@@ -4,11 +4,13 @@ import { getPosts, createPost, updatePost, deletePost } from '../controllers/pos
 
 import { dataValidation } from '../validation/dataValidation.js';
 
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
 
 router.get('/', getPosts);
-router.post('/', dataValidation, createPost);
-router.patch('/:id', updatePost);
-router.delete('/:id', deletePost);
+router.post('/', auth, dataValidation, createPost);
+router.patch('/:id', auth, updatePost);
+router.delete('/:id', auth, deletePost);
 
 export default router;

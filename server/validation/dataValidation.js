@@ -1,7 +1,7 @@
 import { check } from 'express-validator';
 
 export const dataValidation = [ 
-  check(['author','title'])
+  check(['title'])
     .exists()
     .withMessage('author or title key does not exists')
     .notEmpty()

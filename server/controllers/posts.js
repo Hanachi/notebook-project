@@ -28,7 +28,7 @@ export const createPost = async (req, res) => {
 		res.status(422).json({ errors: errors.array(), success: false });
 		return;
 	}
-	const newPost = new PostMessage(post);
+	const newPost = new PostMessage({ ...post, author: req.userId, createdAt: new Date().toISOString() });
 
 	try {
 
